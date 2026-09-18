@@ -78,13 +78,13 @@ flowchart TD
 | Component        | Technology                         |
 | ---------------- | ---------------------------------- |
 | Backend          | Node.js, Express.js                |
-| Machine Learning | Python, XGBoost                    |
+| Machine Learning | Python, LightGBM                   |
 | Dataset          | IEEE-CIS Fraud Detection           |
 | Data Format      | Parquet                            |
 | Graph Database   | TigerGraph                         |
 | AI Summarization | Gemini LLM                         |
-| Frontend         | React, Vite                        |
-| API Testing      | Postman / Swagger-compatible tools |
+| Frontend         | Html, Css, Js                      |
+
 
 ## 📁 Project Structure
 
