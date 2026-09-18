@@ -1,0 +1,45 @@
+{
+  "split_type": "Strict Chronological Temporal Split",
+  "cutoff_dt": 12192853,
+  "cutoff_day": 140.12,
+  "feature_count": 480,
+  "train": {
+    "rows": 472432,
+    "pct_of_labeled": 80.0,
+    "fraud_count": 16599,
+    "legit_count": 455833,
+    "fraud_rate_pct": 3.5135,
+    "dt_min": 86400,
+    "dt_max": 12192842,
+    "span_days": 140.12,
+    "file_path": "C:\\Users\\Ishank Sharma\\Documents\\SkillCread_Hackathon\\data\\processed\\temporal_split\\train_split.parquet",
+    "size_mb": 113.5
+  },
+  "validation": {
+    "rows": 118108,
+    "pct_of_labeled": 20.0,
+    "fraud_count": 4064,
+    "legit_count": 114044,
+    "fraud_rate_pct": 3.4409,
+    "dt_min": 12192900,
+    "dt_max": 15811131,
+    "span_days": 41.88,
+    "file_path": "C:\\Users\\Ishank Sharma\\Documents\\SkillCread_Hackathon\\data\\processed\\temporal_split\\val_split.parquet",
+    "size_mb": 29.7
+  },
+  "test": {
+    "rows": 506691,
+    "dt_min": 18403224,
+    "dt_max": 34214345,
+    "span_days": 183.0,
+    "file_path": "C:\\Users\\Ishank Sharma\\Documents\\SkillCread_Hackathon\\data\\processed\\temporal_split\\test_split.parquet",
+    "size_mb": 121.2
+  },
+  "leakage_checks": {
+    "train_dt_max_lt_val_dt_min": true,
+    "val_dt_max_lt_test_dt_min": true,
+    "zero_row_overlap": true,
+    "transformations_fit_on_train_only": true
+  },
+  "timestamp": "2026-09-18 00:06:02"
+}
