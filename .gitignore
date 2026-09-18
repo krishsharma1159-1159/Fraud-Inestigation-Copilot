@@ -1,0 +1,27 @@
+# Environment variables and secrets
+.env
+*.env
+.env.*
+!.env.example
+*credential*
+*credentials*
+*api_key*
+*secret*
+*.pem
+*.key
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.pkl
+*.parquet
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# OS artifacts
+Thumbs.db
+.DS_Store
