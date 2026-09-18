@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Arthadrishti — AI-Powered Fraud Investigation Workspace</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            glacier: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#006194',
+              900: '#0c4a6e'
+            },
+            surface: {
+              base: '#f8fafc',
+              card: '#ffffff',
+              panel: '#f0f7fc',
+              border: '#e2e8f0',
+              borderLight: '#cbd5e1'
+            }
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+    body {
+      background: radial-gradient(circle at 50% 0%, #e0f2fe 0%, #f0f9ff 35%, #f8fafc 100%);
+      color: #334155;
+      font-family: 'Inter', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .graph-node {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    .graph-node:hover {
+      transform: scale(1.04);
+      filter: drop-shadow(0 6px 16px rgba(2, 132, 199, 0.35));
+    }
+    .graph-node.selected-node {
+      filter: drop-shadow(0 0 12px rgba(2, 132, 199, 0.65));
+    }
+    .graph-edge {
+      stroke-dasharray: 6 4;
+      animation: dash 20s linear infinite;
+    }
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -100;
+      }
+    }
+    .pulse-indicator {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+    .ice-glass {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 25px -5px rgba(186, 230, 253, 0.25), 0 4px 6px -2px rgba(148, 163, 184, 0.05);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-700 antialiased flex flex-col custom-scrollbar selection:bg-sky-200 selection:text-sky-900">
+<!-- TOP HEADER -->
+<header class="border-b border-sky-200/80 bg-white/85 backdrop-blur-md sticky top-0 z-50 shadow-sm shadow-sky-100/40">
+<div class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+<!-- Brand & Subtitle -->
+<div class="flex items-center gap-4">
+<div class="w-9 h-9 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/25 ring-2 ring-sky-200">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M2 12h20"></path>
+<path d="M20 12v8H4v-8"></path>
+<circle cx="12" cy="7" r="4"></circle>
+<path d="M12 11v4"></path>
+<circle cx="12" cy="12" r="9" stroke-dasharray="2 3"></circle>
+</svg>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h1 class="text-lg font-bold tracking-wider text-slate-900 font-mono uppercase">ARTHADRISHTI</h1>
+<span class="px-2 py-0.5 text-[10px] font-semibold tracking-wide bg-sky-100 text-sky-800 border border-sky-200 rounded">FORENSIC v2.4</span>
+</div>
+<p class="text-xs text-slate-500 font-medium">seeing beyond the transaction</p>
+</div>
+</div>
+<!-- Live Engine Telemetry Badges -->
+<div class="flex items-center gap-3">
+<!-- System Status -->
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-white border border-emerald-200 text-xs shadow-xs">
+<span class="w-2 h-2 rounded-full bg-emerald-500 pulse-indicator"></span>
+<span class="text-slate-500 font-medium">System:</span>
+<span class="font-semibold text-emerald-700">Online</span>
+</div>
+<!-- ML Model Status -->
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-white border border-sky-200 text-xs shadow-xs">
+<span class="w-2 h-2 rounded-full bg-sky-500"></span>
+<span class="text-slate-500 font-medium">ML Model:</span>
+<span class="font-semibold text-sky-800 font-mono">LightGBM Ensemble (Active)</span>
+</div>
+<!-- TigerGraph Status -->
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-white border border-purple-200 text-xs shadow-xs">
+<span class="w-2 h-2 rounded-full bg-purple-500"></span>
+<span class="text-slate-500 font-medium">TigerGraph:</span>
+<span class="font-semibold text-purple-700">Connected</span>
+<span class="text-[10px] text-slate-400 font-mono">v3.9.2</span>
+</div>
+<!-- Role Badge -->
+<div class="hidden lg:flex items-center gap-2 pl-3 border-l border-slate-200">
+<div class="w-7 h-7 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center text-xs font-semibold text-sky-700">
+            INV
+          </div>
+<div class="text-left leading-tight">
+<p class="text-xs font-semibold text-slate-800">Sr. Investigator</p>
+<p class="text-[10px] text-slate-500 font-medium">Tier-3 Unit</p>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- MAIN WORKSPACE -->
+<main class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 flex flex-col gap-5 w-full">
+<!-- SECTION 1: INVESTIGATION SCENARIOS & MANUAL INPUT -->
+<section class="ice-glass rounded-xl border border-sky-200/90 p-4 shadow-sm relative overflow-hidden">
+<div class="absolute top-0 right-0 w-96 h-28 bg-gradient-to-l from-sky-400/10 to-transparent pointer-events-none"></div>
+<div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 pb-3 border-b border-sky-100">
+<div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-sky-100 text-sky-700 border border-sky-200">Section 1</span>
+<h2 class="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+<svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              INVESTIGATE CASE
+            </h2>
+</div>
+<p class="text-xs text-slate-500 mt-0.5">Select a verified forensic scenario or input an arbitrary transaction ID to execute the forensic pipeline.</p>
+</div>
+<!-- Manual Transaction Investigation Input -->
+<div class="w-full xl:w-auto flex items-center gap-2">
+<div class="relative flex-1 xl:w-80">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-mono text-xs">TXN:</span>
+<input class="w-full pl-12 pr-3 py-2 bg-white border border-sky-200 rounded-lg text-xs font-mono text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-colors shadow-2xs" id="manualTxnInput" placeholder="e.g. TXN1045" type="text" value="TXN1045"/>
+</div>
+<button class="px-4 py-2 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white rounded-lg text-xs font-semibold tracking-wide transition-all shadow-md shadow-sky-600/20 flex items-center gap-2 whitespace-nowrap active:scale-95" id="investigateBtn" onclick="handleManualInvestigate()">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Investigate Case
+          </button>
+</div>
+</div>
+<!-- Prepared Investigation Scenarios (5 Scenarios) -->
+<div class="mt-3">
+<div class="flex items-center justify-between mb-2">
+<span class="text-[11px] font-semibold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Prepared Investigation Scenarios (Judge / Demo Presets)
+          </span>
+<span class="text-[10px] text-slate-500">Click any card to auto-load prepared ML, TigerGraph &amp; Evidence telemetry</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-2.5" id="scenarioCardsContainer"></div>
+</div>
+</section>
+<!-- TOP SPLIT: SECTION 2 (MODEL PREDICTION) + SECTION 3 (CALCULATED EVIDENCE) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+<!-- SECTION 2: MODEL PREDICTION (4 COLS) -->
+<div class="lg:col-span-4 ice-glass rounded-xl border border-sky-200/90 p-4 flex flex-col justify-between relative shadow-sm">
+<div>
+<!-- Header with strict classification label -->
+<div class="flex items-center justify-between border-b border-sky-100 pb-3">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">Section 2</span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-900">MODEL PREDICTION</h3>
+</div>
+<p class="text-[11px] text-slate-500 mt-0.5">Anomaly &amp; Risk Classifier</p>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+              ML MODEL OUTPUT
+            </span>
+</div>
+<!-- Main Risk Indicator Box -->
+<div class="mt-4 p-3.5 rounded-lg bg-slate-50/90 border border-sky-200 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div>
+<span class="text-[11px] uppercase tracking-wider text-slate-500 font-medium">Prediction State</span>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="px-2.5 py-1 rounded text-xs font-mono font-bold tracking-wider bg-rose-100 text-rose-700 border border-rose-300 flex items-center gap-1.5 shadow-2xs" id="mlPredictionTag">
+<span class="w-2 h-2 rounded-full bg-rose-500 pulse-indicator"></span>
+        SUSPICIOUS
+      </span>
+<span class="text-[11px] text-slate-500">(Non-Confirmed)</span>
+</div>
+</div>
+<div class="text-right">
+<span class="text-[11px] uppercase tracking-wider text-slate-500 font-medium">Risk Score</span>
+<div class="text-2xl font-bold font-mono text-rose-600" id="mlRiskScoreText">94.2%</div>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="space-y-1">
+<div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden p-0.5 flex">
+<div class="h-full bg-gradient-to-r from-amber-400 via-rose-500 to-red-600 rounded-full transition-all duration-700 shadow-2xs" id="mlRiskBar" style="width: 94.2%"></div>
+</div>
+<div class="flex justify-between text-[10px] text-slate-500 font-mono">
+<span class="">0% Safe</span>
+<span class="">Threshold: 70.0%</span>
+<span class="">100% Critical</span>
+</div>
+</div>
+</div>
+<!-- Model Metadata Specs -->
+<div class="mt-3 grid grid-cols-2 gap-2 text-xs font-mono">
+<div class="p-2.5 rounded-lg bg-white border border-sky-100 shadow-2xs">
+<div class="text-[10px] text-slate-500 font-sans">Active Model</div>
+<div class="font-semibold text-slate-800 text-xs mt-0.5 truncate" id="mlModelName">Fraud Detection LightGBM (v3.4)</div>
+</div>
+<div class="p-2.5 rounded-lg bg-white border border-sky-100 shadow-2xs">
+<div class="text-[10px] text-slate-500 font-sans">Transaction Target</div>
+<div class="font-semibold text-sky-700 text-xs mt-0.5" id="mlTargetTxn">TXN1045</div>
+</div>
+<div class="p-2.5 rounded-lg bg-white border border-sky-100 shadow-2xs">
+<div class="text-[10px] text-slate-500 font-sans">Inference Latency</div>
+<div class="font-semibold text-emerald-600 text-xs mt-0.5">14.8 ms</div>
+</div>
+<div class="p-2.5 rounded-lg bg-white border border-sky-100 shadow-2xs">
+<div class="text-[10px] text-slate-500 font-sans">Model Confidence</div>
+<div class="font-semibold text-purple-700 text-xs mt-0.5" id="mlConfidenceScore">98.1% (High)</div>
+</div>
+</div>
+</div>
+<!-- Strict Isolation Notice -->
+<div class="mt-4 pt-3 border-t border-sky-100 flex items-center justify-between text-[11px] text-slate-500">
+<span class="flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Pure ML score. No human/AI interpretation.
+          </span>
+<span class="text-[10px] font-mono text-slate-400">v1.12-rt</span>
+</div>
+</div>
+<!-- SECTION 3: CALCULATED EVIDENCE (8 COLS) -->
+<div class="lg:col-span-8 ice-glass rounded-xl border border-sky-200/90 p-4 flex flex-col justify-between shadow-sm">
+<div>
+<!-- Header -->
+<div class="flex items-center justify-between border-b border-sky-100 pb-3">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">Section 3</span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-900">WHY WAS IT FLAGGED?</h3>
+</div>
+<p class="text-[11px] text-slate-500 mt-0.5">Calculated Evidence &amp; Statistical Feature Deviations</p>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              COMPUTED FROM TRANSACTION &amp; ACCOUNT DATA
+            </span>
+</div>
+<!-- Reason Codes Cards Grid -->
+<div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2.5" id="calculatedEvidenceContainer"></div>
+</div>
+<!-- Strict Grounding Footer -->
+<div class="mt-4 pt-3 border-t border-sky-100 flex items-center justify-between text-[11px] text-slate-500">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+<span class="">Deterministic metrics generated via Feature Store &amp; Statistical Profiler. AI text strictly forbidden here.</span>
+</div>
+<span class="text-[10px] font-mono text-slate-400">4 Signals Active</span>
+</div>
+</div>
+</div>
+<!-- SECTION 4: TIGERGRAPH INVESTIGATION GRAPH -->
+<section class="ice-glass rounded-xl border border-sky-200/90 p-4 shadow-sm flex flex-col">
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-sky-100 pb-3">
+<div>
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">Section 4</span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-900">INVESTIGATION GRAPH</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">
+<svg class="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="12 8 8 12 12 16 16 12 12 8"></polygon></svg>
+              Powered by TigerGraph
+            </span>
+</div>
+<p class="text-[11px] text-slate-500 mt-0.5">Interactive multi-hop network tracing transaction lineage, entity hubs, and velocity routing</p>
+</div>
+<!-- Controls Bar -->
+<div class="flex items-center gap-2 self-stretch sm:self-auto justify-end">
+<div class="flex items-center bg-white border border-sky-200 rounded-lg p-1 text-xs shadow-2xs">
+<button class="px-2.5 py-1 hover:bg-sky-50 rounded text-slate-600 hover:text-slate-900 transition-colors font-mono font-semibold" onclick="resetGraphZoom()" title="Reset View">
+              Reset
+            </button>
+<div class="w-px h-3.5 bg-slate-200 mx-1"></div>
+<button class="px-2.5 py-1 hover:bg-sky-50 rounded text-slate-700 hover:text-slate-900 font-bold transition-colors" onclick="zoomGraph(1.15)" title="Zoom In">+</button>
+<button class="px-2.5 py-1 hover:bg-sky-50 rounded text-slate-700 hover:text-slate-900 font-bold transition-colors" onclick="zoomGraph(0.85)" title="Zoom Out">-</button>
+</div>
+<div class="text-[11px] text-slate-600 font-mono px-3 py-1.5 bg-white rounded-lg border border-sky-200 shadow-2xs whitespace-nowrap">
+            Selected: <span class="text-sky-700 font-bold" id="activeNodeLabel">Account A102</span>
+</div>
+</div>
+</div>
+<!-- Main Body: 2-Column Clean Side-by-Side Layout -->
+<div class="mt-3.5 grid grid-cols-1 xl:grid-cols-12 gap-3.5 items-stretch">
+<div class="xl:col-span-8 bg-gradient-to-b from-sky-50/50 via-white to-sky-50/30 rounded-xl border border-sky-200 shadow-inner flex flex-col overflow-hidden min-h-[420px] relative">
+<div class="w-full h-full min-h-[420px] cursor-grab active:cursor-grabbing relative overflow-hidden" id="svgContainer">
+<svg class="w-full h-full select-none block" id="tigerGraphSvg" preserveaspectratio="xMidYMid meet" viewbox="0 0 920 420">
+<defs>
+<!-- Arrow marker default -->
+<marker id="arrow" markerheight="7" markerwidth="7" orient="auto-start-reverse" refx="24" refy="5" viewbox="0 0 10 10">
+<path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0284c7"></path>
+</marker>
+<!-- Arrow marker flagged -->
+<marker id="arrow-flagged" markerheight="8" markerwidth="8" orient="auto-start-reverse" refx="26" refy="5" viewbox="0 0 10 10">
+<path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#e11d48"></path>
+</marker>
+<!-- Arrow marker supporting -->
+<marker id="arrow-supporting" markerheight="7" markerwidth="7" orient="auto-start-reverse" refx="24" refy="5" viewbox="0 0 10 10">
+<path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#d97706"></path>
+</marker>
+<!-- Glow Filters -->
+<filter height="150%" id="glow-cyan" width="150%" x="-25%" y="-25%">
+<fegaussianblur result="blur" stddeviation="4"></fegaussianblur>
+<fecomposite in="SourceGraphic" in2="blur" operator="over"></fecomposite>
+</filter>
+<filter height="150%" id="glow-red" width="150%" x="-25%" y="-25%">
+<fegaussianblur result="blur" stddeviation="5"></fegaussianblur>
+<fecomposite in="SourceGraphic" in2="blur" operator="over"></fecomposite>
+</filter>
+<!-- Graph Grid Pattern -->
+<pattern height="36" id="grid" patternunits="userSpaceOnUse" width="36">
+<circle cx="18" cy="18" fill="#bae6fd" fill-opacity="0.8" r="1"></circle>
+<path d="M 36 0 L 0 0 0 36" fill="none" stroke="#e0f2fe" stroke-opacity="0.7" stroke-width="0.75"></path>
+</pattern>
+</defs>
+<!-- Background Grid -->
+<rect fill="url(#grid)" height="100%" width="100%"></rect>
+<!-- Graph Elements Container -->
+<g id="graphElementsGroup" transform="translate(0, 0) scale(1)"></g>
+</svg>
+</div>
+</div>
+<!-- Right Column: Dedicated Node Detail Inspector Panel -->
+<div class="xl:col-span-4 bg-white/95 backdrop-blur-sm border border-sky-200 rounded-xl p-4 shadow-sm flex flex-col justify-between" id="nodeDetailPanel">
+<div>
+<!-- Panel Header -->
+<div class="flex items-center justify-between border-b border-sky-100 pb-2.5">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-sky-500 shadow-sm" id="inspectorBadge"></span>
+<span class="text-xs font-mono font-bold text-slate-900 tracking-wide uppercase" id="inspectorTitle">Account: A102</span>
+</div>
+<span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200 font-semibold" id="inspectorType">ACCOUNT</span>
+</div>
+<!-- Telemetry Property List -->
+<div class="mt-3.5 space-y-2.5 text-xs font-mono" id="inspectorBody">
+<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50/80 border border-slate-100">
+<span class="text-slate-500 text-[11px] font-sans">Total Transactions:</span>
+<span class="text-slate-900 font-bold" id="inspTotalTxn">27</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50/80 border border-slate-100">
+<span class="text-slate-500 text-[11px] font-sans">Connected Accounts:</span>
+<span class="text-slate-900 font-bold" id="inspConnectedAcc">4</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-rose-50/60 border border-rose-100">
+<span class="text-slate-600 text-[11px] font-sans font-medium">Flagged Signals:</span>
+<span class="text-rose-600 font-bold" id="inspFlaggedTxn">2</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-emerald-50/60 border border-emerald-100">
+<span class="text-slate-600 text-[11px] font-sans font-medium">Historical Baseline / Value:</span>
+<span class="text-emerald-700 font-bold" id="inspAvgVal">₹18,400</span>
+</div>
+<!-- Forensic Observation Box -->
+<div class="mt-2.5 pt-2 border-t border-sky-100">
+<span class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold block mb-1">Graph Forensics Note:</span>
+<p class="text-[11px] text-slate-700 font-sans leading-relaxed p-2.5 rounded-lg bg-sky-50/50 border border-sky-100" id="inspNote">
+            Primary originating account showing immediate transfer velocity to intermediate hub B204.
+          </p>
+</div>
+</div>
+</div>
+<!-- Quick Graph Filter & Jump Action -->
+<div class="mt-4 pt-3 border-t border-sky-100 flex items-center justify-between">
+<span class="text-[10px] font-mono text-slate-400">TigerGraph Relational Query</span>
+<button class="px-2.5 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded text-[10px] font-mono font-semibold transition-colors flex items-center gap-1" onclick="highlightConnectedNeighbors()">
+<span>Highlight Links</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Bottom Legend & Status Tray -->
+<div class="mt-3 pt-2.5 border-t border-sky-100 flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-600">
+<div class="flex flex-wrap items-center gap-4 font-medium">
+<span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-sky-100 border-2 border-sky-600 shadow-2xs"></span> Account Node</span>
+<span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-rose-100 border-2 border-rose-600 shadow-2xs"></span> Flagged Transaction</span>
+<span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-amber-100 border-2 border-amber-500 shadow-2xs"></span> Supporting Transaction</span>
+<span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-purple-100 border-2 border-purple-600 shadow-2xs"></span> Recipient / Hub</span>
+</div>
+<span class="text-slate-400 font-mono text-[10px] flex items-center gap-1">
+<svg class="w-3 h-3 text-sky-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+    Click any node to focus &amp; inspect forensic properties
+  </span>
+</div>
+</section>
+<!-- SECTION 5 & SECTION 6: SUPPORTING TRANSACTIONS & ACCOUNT HISTORY -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+<!-- SECTION 5: SUPPORTING TRANSACTIONS / EVIDENCE TABLE -->
+<div class="lg:col-span-7 ice-glass rounded-xl border border-sky-200/90 p-4 flex flex-col justify-between shadow-sm">
+<div>
+<!-- Header -->
+<div class="flex items-center justify-between border-b border-sky-100 pb-3">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-sky-100 text-sky-700 border border-sky-200">Section 5</span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-900">SUPPORTING TRANSACTIONS</h3>
+</div>
+<p class="text-[11px] text-slate-500 mt-0.5">Primary Evidence Ledger &amp; Cluster Transactions</p>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+              SOURCE: TRANSACTION / ACCOUNT DATA
+            </span>
+</div>
+<!-- Table -->
+<div class="mt-3 overflow-x-auto rounded-lg border border-sky-100">
+<table class="w-full text-left text-xs">
+<thead>
+<tr class="border-b border-sky-100 text-[11px] font-mono uppercase text-slate-500 bg-sky-50/60">
+<th class="py-2.5 px-3">Transaction ID</th>
+<th class="py-2.5 px-3">Date / Time</th>
+<th class="py-2.5 px-3">Amount</th>
+<th class="py-2.5 px-3">Type</th>
+<th class="py-2.5 px-3">Recipient</th>
+<th class="py-2.5 px-3 text-right">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-sky-100 font-mono bg-white" id="supportingTxnsTableBody"></tbody>
+</table>
+</div>
+</div>
+<div class="mt-3 pt-2 border-t border-sky-100 flex items-center justify-between text-[11px] text-slate-500">
+<span class="">Displaying verified backend records correlated to current investigation case.</span>
+<span class="font-mono text-slate-400 text-[10px]">Deterministic SQL / Graph Query Output</span>
+</div>
+</div>
+<!-- SECTION 6: ACCOUNT HISTORY TIMELINE -->
+<div class="lg:col-span-5 ice-glass rounded-xl border border-sky-200/90 p-4 flex flex-col justify-between shadow-sm">
+<div>
+<!-- Header -->
+<div class="flex items-center justify-between border-b border-sky-100 pb-3">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">Section 6</span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-900">ACCOUNT ACTIVITY TIMELINE</h3>
+</div>
+<p class="text-[11px] text-slate-500 mt-0.5">Chronological Behavioral Sequence &amp; State Shift</p>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              AUDIT LOG
+            </span>
+</div>
+<!-- Timeline Container -->
+<div class="mt-4 relative pl-5 space-y-3" id="timelineContainer"></div>
+</div>
+<div class="mt-3 pt-2 border-t border-sky-100 flex items-center justify-between text-[11px] text-slate-500">
+<span class="">Highlights sudden velocity &amp; value inflections over baseline.</span>
+<span class="font-mono text-slate-400 text-[10px]">Sequence: t-0 to t-5</span>
+</div>
+</div>
+</div>
+<!-- SECTION 7: AI-GENERATED CASE BRIEF -->
+<section class="ice-glass rounded-xl border border-sky-200/90 p-4 shadow-sm relative overflow-hidden">
+<!-- Glow decoration -->
+<div class="absolute -top-10 -right-10 w-48 h-48 bg-sky-400/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-sky-100 pb-3">
+<div>
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-sky-100 text-sky-700 border border-sky-200">Section 7</span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+<svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              AI INVESTIGATION SUMMARY
+            </h3>
+<span class="text-xs text-slate-500 font-normal">| Evidence-Grounded Case Brief</span>
+</div>
+<p class="text-[11px] text-slate-500 mt-0.5">Synthesized purely from verified facts, metrics, and graph topology. Hallucination-proof sandbox.</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 rounded text-[10px] font-mono font-bold bg-sky-100 text-sky-800 border border-sky-300 flex items-center gap-1.5">
+<svg class="w-3 h-3 text-sky-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            GENERATED FROM VERIFIED COMPUTED FACTS ONLY
+          </span>
+<button class="px-2.5 py-1 bg-white hover:bg-sky-50 text-[10px] font-mono text-slate-700 border border-sky-200 rounded transition-colors flex items-center gap-1 shadow-2xs" id="briefToggleBtn" onclick="toggleBriefMode()">
+<span class="">Mode: Grounded Brief</span>
+<span class="text-slate-400">vs Template</span>
+</button>
+</div>
+</div>
+<!-- Brief Box Container -->
+<div class="mt-3 grid grid-cols-1 lg:grid-cols-12 gap-4">
+<!-- Main AI Narrative -->
+<div class="lg:col-span-12 p-4 rounded-lg bg-sky-50/50 border border-sky-200 flex flex-col gap-3" id="aiBriefContainer">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-lg bg-sky-100 border border-sky-300 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+<svg class="w-4 h-4 text-sky-700" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono font-bold text-sky-800">ARTHADRISHTI-LLM REASONING SYNTHESIS</span>
+<span class="text-[10px] font-mono text-slate-500">Grounded Tokens: 100% Deterministic</span>
+</div>
+<p class="mt-2 text-sm text-slate-800 leading-relaxed font-sans" id="aiBriefText"></p>
+</div>
+</div>
+<!-- Fact Anchors -->
+<div class="pt-3 border-t border-sky-200 flex flex-wrap items-center gap-2 text-[11px] font-mono">
+<span class="text-slate-500 font-sans font-medium">Grounded Entities:</span>
+<span class="px-2 py-0.5 rounded bg-white text-sky-700 border border-sky-200 shadow-2xs font-semibold" id="factTxn">TXN1045</span>
+<span class="px-2 py-0.5 rounded bg-white text-emerald-700 border border-emerald-200 shadow-2xs font-semibold" id="factAmt">₹82,500</span>
+<span class="px-2 py-0.5 rounded bg-white text-purple-700 border border-purple-200 shadow-2xs font-semibold" id="factRec">Recipient: B204</span>
+<span class="px-2 py-0.5 rounded bg-white text-rose-700 border border-rose-200 shadow-2xs font-semibold" id="factRisk">Risk: 94.2%</span>
+<span class="px-2 py-0.5 rounded bg-white text-amber-700 border border-amber-200 shadow-2xs font-semibold" id="factGraph">TigerGraph Path: 2 hops</span>
+</div>
+</div>
+<!-- Optional Deterministic Template Comparison -->
+<div class="hidden lg:col-span-6 p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col gap-2" id="templateBriefContainer">
+<div class="flex items-center justify-between border-b border-slate-200 pb-2">
+<span class="text-xs font-mono font-semibold text-slate-700">DETERMINISTIC TEMPLATE BRIEF (RULE ENGINE)</span>
+<span class="text-[10px] font-mono text-slate-400">Fixed String Interpolation</span>
+</div>
+<p class="text-xs font-mono text-slate-600 leading-relaxed" id="templateBriefText"></p>
+</div>
+</div>
+</section>
+<!-- SECTION 8: INVESTIGATION ACTIONS & ANALYST DECISION CONTROLS -->
+<section class="ice-glass rounded-xl border border-sky-200/90 p-4 shadow-sm">
+<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">Section 8</span>
+<h3 class="text-xs font-bold uppercase tracking-wider text-slate-900">INVESTIGATION ACTION</h3>
+<span class="text-xs text-slate-500">| Human Investigator Final Sign-off</span>
+</div>
+<p class="text-[11px] text-slate-500 mt-0.5">The ML model identifies anomaly vectors; human analysts record disposition &amp; execute case routing.</p>
+</div>
+<!-- Primary Action Buttons -->
+<div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+<!-- Analyst Feedback controls -->
+<div class="flex items-center bg-white p-1 rounded-lg border border-sky-200 text-xs shadow-2xs">
+<span class="text-[11px] text-slate-500 px-2 font-mono">Feedback:</span>
+<button class="px-2.5 py-1 rounded hover:bg-rose-50 text-rose-700 hover:border-rose-200 border border-transparent font-medium transition-colors" onclick="recordFeedback('CONFIRMED_SUSPICIOUS')">
+              Confirm Suspicious
+            </button>
+<button class="px-2.5 py-1 rounded hover:bg-emerald-50 text-emerald-700 hover:border-emerald-200 border border-transparent font-medium transition-colors" onclick="recordFeedback('NOT_SUSPICIOUS')">
+              Not Suspicious
+            </button>
+<button class="px-2.5 py-1 rounded hover:bg-amber-50 text-amber-700 hover:border-amber-200 border border-transparent font-medium transition-colors" onclick="recordFeedback('NEEDS_REVIEW')">
+              Needs Review
+            </button>
+</div>
+<!-- Mark for Review Button -->
+<button class="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold tracking-wide transition-all flex items-center gap-2 active:scale-95 shadow-2xs" onclick="handleMarkReview()">
+<svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Mark for Review
+          </button>
+<!-- Export Case Button -->
+<button class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-lg text-xs font-semibold tracking-wide transition-all flex items-center gap-2 active:scale-95 shadow-2xs" onclick="handleExportCase()">
+<svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Export Case (JSON)
+          </button>
+<!-- Clear Investigation Button -->
+<button class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold tracking-wide transition-all flex items-center gap-2 active:scale-95 shadow-2xs" onclick="handleClearCase()">
+<svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Clear Investigation
+          </button>
+<!-- Similar Cases -->
+<button class="px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-lg text-xs font-mono transition-all flex items-center gap-1.5 shadow-2xs" onclick="handleSimilarCases()" title="Case Similarity Search (Vector DB Embedding Matching)">
+<svg class="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Find Similar Cases
+          </button>
+</div>
+</div>
+<!-- Feedback Confirmation Toast -->
+<div class="hidden mt-3 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-mono text-emerald-800 flex items-center justify-between" id="actionToast">
+<span class="" id="actionToastText">Disposition saved successfully into investigation audit stream.</span>
+<button class="text-emerald-700 hover:text-emerald-900 text-xs" onclick="this.parentElement.classList.add('hidden')">✕</button>
+</div>
+</section>
+</main>
+<!-- DATA LAYER & INVESTIGATION ENGINE SCRIPT -->
+<script>
+    // 5 PREPARED FORENSIC INVESTIGATION SCENARIOS
+    const SCENARIOS = [
+      {
+        id: "SCENARIO_1",
+        name: "High Amount Spike",
+        shortDesc: "Detect unusually large transaction compared with account history.",
+        targetTxnId: "TXN1045",
+        ml: {
+          prediction: "SUSPICIOUS",
+          riskScore: 94.2,
+          modelName: "Fraud Detection LightGBM (v3.4)",
+          confidence: "98.1%"
+        },
+        calculatedEvidence: [
+          {
+            code: "AMOUNT_SPIKE",
+            title: "Severe Amount Deviation",
+            desc: "Transaction amount is significantly higher than historical average.",
+            metrics: [
+              { label: "Transaction Amount", value: "₹82,500" },
+              { label: "Account Average", value: "₹18,400" },
+              { label: "Deviation", value: "4.48×" }
+            ],
+            severity: "critical"
+          },
+          {
+            code: "HIGH_VELOCITY",
+            title: "Burst Window Frequency",
+            desc: "Multiple high-value transactions executed within a tight window.",
+            metrics: [
+              { label: "Txns in Window", value: "6" },
+              { label: "Time Window", value: "24 minutes" }
+            ],
+            severity: "warning"
+          },
+          {
+            code: "UNUSUAL_ACTIVITY",
+            title: "Behavioral Shift",
+            desc: "Current transaction behavior diverges sharply from the 90-day baseline.",
+            metrics: [
+              { label: "Historical Baseline", value: "₹18,400" },
+              { label: "Current Volume", value: "₹82,500" }
+            ],
+            severity: "critical"
+          },
+          {
+            code: "NEW_RECIPIENT",
+            title: "Low Counterparty History",
+            desc: "Recipient has minimal previous transaction depth with originating account.",
+            metrics: [
+              { label: "Counterparty", value: "B204" },
+              { label: "Prior Txns", value: "1" }
+            ],
+            severity: "warning"
+          }
+        ],
+        graph: {
+          nodes: [
+            { id: "A102", label: "Account A102", sublabel: "Originating Account", type: "ACCOUNT", x: 110, y: 210, totalTxn: 27, connected: 4, flagged: 2, avg: "₹18,400", note: "Primary originating account showing abrupt 4.48x value spike." },
+            { id: "TXN1045", label: "TXN1045", sublabel: "₹82,500 Spike", type: "FLAGGED_TXN", x: 320, y: 210, amount: "₹82,500", status: "SUSPICIOUS", note: "Flagged spike transaction routed directly to recipient B204." },
+            { id: "B204", label: "Recipient B204", sublabel: "Mule Aggregator", type: "RECIPIENT", x: 530, y: 210, totalTxn: 43, connected: 8, flagged: 3, avg: "₹52,000", note: "Intermediate beneficiary account receiving rapid clustered transfers." },
+            { id: "TXN1098", label: "TXN1098", sublabel: "₹79,000 Next-Hop", type: "SUPPORTING_TXN", x: 690, y: 130, amount: "₹79,000", status: "Supporting", note: "Rapid onward hop transaction executed 4 mins after receipt." },
+            { id: "C301", label: "Entity C301", sublabel: "Secondary Destination", type: "ACCOUNT", x: 820, y: 130, totalTxn: 12, connected: 2, flagged: 1, avg: "₹34,000", note: "Terminal recipient account in secondary ring layer." }
+          ],
+          edges: [
+            { from: "A102", to: "TXN1045", label: "MADE", flagged: true },
+            { from: "TXN1045", to: "B204", label: "SENT_TO", flagged: true },
+            { from: "B204", to: "TXN1098", label: "ROUTED_TO", flagged: false, supporting: true },
+            { from: "TXN1098", to: "C301", label: "TRANSFERRED", flagged: false }
+          ]
+        },
+        supportingTxns: [
+          { id: "TXN1045", time: "14:32", amount: "₹82,500", type: "TRANSFER", recipient: "B204", status: "Suspicious", isFlagged: true },
+          { id: "TXN1039", time: "14:28", amount: "₹74,200", type: "TRANSFER", recipient: "B204", status: "Supporting", isSupporting: true },
+          { id: "TXN1027", time: "14:11", amount: "₹68,900", type: "TRANSFER", recipient: "B204", status: "Supporting", isSupporting: true },
+          { id: "TXN1014", time: "13:56", amount: "₹18,200", type: "TRANSFER", recipient: "B204", status: "Normal", isNormal: true }
+        ],
+        timeline: [
+          { time: "10:42", amount: "₹2,400", state: "Normal", desc: "Routine UPI utility payment" },
+          { time: "11:18", amount: "₹3,100", state: "Normal", desc: "Merchant checkout grocery" },
+          { time: "13:56", amount: "₹18,200", state: "Unusual", desc: "Baseline threshold exceeded" },
+          { time: "14:11", amount: "₹68,900", state: "Suspicious", desc: "High velocity burst initiated" },
+          { time: "14:28", amount: "₹74,200", state: "Suspicious", desc: "Repeated large sum transfer" },
+          { time: "14:32", amount: "₹82,500", state: "Flagged", desc: "Peak spike transaction flagged" }
+        ],
+        aiBrief: "Transaction TXN1045 was flagged as suspicious with an ML model risk score of 94.2%. The transaction amount is ₹82,500 compared with an account historical average of ₹18,400, representing a 4.48× deviation. Multiple high-value transfers occurred within the observed time window, including transactions TXN1039 (₹74,200) and TXN1027 (₹68,900). The TigerGraph investigation also shows the transaction's direct connection to recipient B204 and immediate downstream routing via TXN1098 to account C301.",
+        templateBrief: "RULE-ENGINE NOTICE: Transaction TXN1045 exceeds deviation limit (4.48x > 2.0x limit). Account A102 executed 6 transfers in 24m. Target beneficiary B204 has 1 prior transaction."
+      },
+      {
+        id: "SCENARIO_2",
+        name: "High Transaction Velocity",
+        shortDesc: "Detect multiple transactions occurring within a short period.",
+        targetTxnId: "TXN2218",
+        ml: {
+          prediction: "SUSPICIOUS",
+          riskScore: 91.8,
+          modelName: "Fraud Detection LightGBM (v3.4)",
+          confidence: "96.4%"
+        },
+        calculatedEvidence: [
+          {
+            code: "HIGH_VELOCITY",
+            title: "Rapid Execution Velocity",
+            desc: "Frequency of outbound transactions exceeds 99th percentile for account.",
+            metrics: [
+              { label: "Transactions in Window", value: "9" },
+              { label: "Time Window", value: "11 minutes" },
+              { label: "Average Interval", value: "73 seconds" }
+            ],
+            severity: "critical"
+          },
+          {
+            code: "RAPID_DRAIN",
+            title: "Liquidity Drain Rate",
+            desc: "78% of available account balance dispersed within single hour.",
+            metrics: [
+              { label: "Starting Balance", value: "₹2,10,000" },
+              { label: "Total Disbursed", value: "₹1,64,000" }
+            ],
+            severity: "critical"
+          },
+          {
+            code: "AUTOMATED_CADENCE",
+            title: "Machine-Like Cadence",
+            desc: "Low inter-arrival time standard deviation indicating scripted execution.",
+            metrics: [
+              { label: "Jitter Variance", value: "±2.1s" },
+              { label: "Channel", value: "API / Web Direct" }
+            ],
+            severity: "warning"
+          }
+        ],
+        graph: {
+          nodes: [
+            { id: "A505", label: "Account A505", sublabel: "High Velocity Corp", type: "ACCOUNT", x: 110, y: 210, totalTxn: 64, connected: 9, flagged: 6, avg: "₹12,000", note: "Originating corporate account undergoing automated velocity draining." },
+            { id: "TXN2218", label: "TXN2218", sublabel: "₹25k Velocity Run", type: "FLAGGED_TXN", x: 330, y: 140, amount: "₹25,000", status: "SUSPICIOUS", note: "Velocity batch transfer #9 executed within 70s of prior run." },
+            { id: "TXN2215", label: "TXN2215", sublabel: "₹25k Parallel Run", type: "SUPPORTING_TXN", x: 330, y: 280, amount: "₹25,000", status: "Supporting", note: "Velocity batch transfer #8 executed at 16:04:12." },
+            { id: "GATE99", label: "Gateway 99", sublabel: "Settlement Portal", type: "RECIPIENT", x: 570, y: 210, totalTxn: 320, connected: 44, flagged: 18, avg: "₹22,000", note: "Virtual aggregated merchant settlement portal." },
+            { id: "EXT_WAL", label: "External Wallet X", sublabel: "Off-Ramp Target", type: "ACCOUNT", x: 800, y: 210, totalTxn: 19, connected: 5, flagged: 4, avg: "₹50,000", note: "Off-ramped prepaid instrument receiving velocity dispersals." }
+          ],
+          edges: [
+            { from: "A505", to: "TXN2218", label: "BURST_EXEC", flagged: true },
+            { from: "A505", to: "TXN2215", label: "BURST_EXEC", flagged: false, supporting: true },
+            { from: "TXN2218", to: "GATE99", label: "ROUTED_TO", flagged: true },
+            { from: "TXN2215", to: "GATE99", label: "ROUTED_TO", flagged: false },
+            { from: "GATE99", to: "EXT_WAL", label: "DRAINED_TO", flagged: false }
+          ]
+        },
+        supportingTxns: [
+          { id: "TXN2218", time: "16:05:22", amount: "₹25,000", type: "IMPS", recipient: "GATE99", status: "Suspicious", isFlagged: true },
+          { id: "TXN2215", time: "16:04:12", amount: "₹25,000", type: "IMPS", recipient: "GATE99", status: "Supporting", isSupporting: true },
+          { id: "TXN2211", time: "16:02:55", amount: "₹25,000", type: "IMPS", recipient: "GATE99", status: "Supporting", isSupporting: true },
+          { id: "TXN2208", time: "16:01:40", amount: "₹20,000", type: "IMPS", recipient: "GATE99", status: "Supporting", isSupporting: true }
+        ],
+        timeline: [
+          { time: "15:55:00", amount: "₹450", state: "Normal", desc: "Micro validation test transaction" },
+          { time: "15:58:10", amount: "₹15,000", state: "Unusual", desc: "Initial ramp up transfer" },
+          { time: "16:01:40", amount: "₹20,000", state: "Suspicious", desc: "Rapid interval IMPS sequence 1" },
+          { time: "16:02:55", amount: "₹25,000", state: "Suspicious", desc: "Rapid interval IMPS sequence 2" },
+          { time: "16:04:12", amount: "₹25,000", state: "Suspicious", desc: "Rapid interval IMPS sequence 3" },
+          { time: "16:05:22", amount: "₹25,000", state: "Flagged", desc: "Trigger transaction hit velocity threshold" }
+        ],
+        aiBrief: "Transaction TXN2218 was flagged as suspicious with a risk probability of 91.8%. The primary trigger is an extreme transaction velocity of 9 outbound transfers executed in 11 minutes (average interval 73 seconds), rapidly dispersing ₹1,64,00,000. Supporting transactions TXN2215 and TXN2211 follow an automated fixed-interval pattern routed through intermediate gateway GATE99 into external wallet instruments.",
+        templateBrief: "RULE-ENGINE NOTICE: Velocity rule triggered. Count: 9 txns in 11 minutes (> threshold 4 txns / 30m). Total window volume: ₹1,64,000."
+      },
+      {
+        id: "SCENARIO_3",
+        name: "Repeated Recipient",
+        shortDesc: "Detect repeated high-value transfers to the same recipient.",
+        targetTxnId: "TXN3401",
+        ml: {
+          prediction: "SUSPICIOUS",
+          riskScore: 89.5,
+          modelName: "Fraud Detection LightGBM (v3.4)",
+          confidence: "94.8%"
+        },
+        calculatedEvidence: [
+          {
+            code: "REPEATED_RECIPIENT",
+            title: "Concentration to Single Counterparty",
+            desc: "Cumulative outbound volume disproportionately assigned to a single beneficiary.",
+            metrics: [
+              { label: "Recipient ID", value: "REC-991" },
+              { label: "Repeated Count", value: "5 in 48h" },
+              { label: "Total Transferred", value: "₹3,45,000" }
+            ],
+            severity: "critical"
+          },
+          {
+            code: "STRUCTURING_BURST",
+            title: "Sub-Threshold Structuring",
+            desc: "Multiple transfers sized just below ₹1,00,000 regulatory reporting barrier.",
+            metrics: [
+              { label: "Batch Average", value: "₹92,000" },
+              { label: "Regulatory Limit", value: "₹1,00,000" }
+            ],
+            severity: "critical"
+          },
+          {
+            code: "INACTIVE_HISTORICAL",
+            title: "Dormant Recipient Awakened",
+            desc: "Recipient was inactive for 180+ days before receiving immediate sequential transfers.",
+            metrics: [
+              { label: "Prior Inactivity", value: "194 days" },
+              { label: "New Volume", value: "5 transactions" }
+            ],
+            severity: "warning"
+          }
+        ],
+        graph: {
+          nodes: [
+            { id: "A770", label: "Account A770", sublabel: "Originating Source", type: "ACCOUNT", x: 110, y: 210, totalTxn: 88, connected: 3, flagged: 5, avg: "₹24,000", note: "Originating entity concentrating outbound transfers to REC-991." },
+            { id: "TXN3401", label: "TXN3401", sublabel: "₹95,000 Structured", type: "FLAGGED_TXN", x: 330, y: 140, amount: "₹95,000", status: "SUSPICIOUS", note: "5th sequential structured transfer to REC-991." },
+            { id: "TXN3398", label: "TXN3398", sublabel: "₹92,000 Structured", type: "SUPPORTING_TXN", x: 330, y: 280, amount: "₹92,000", status: "Supporting", note: "4th structured transfer to REC-991 executed 6h prior." },
+            { id: "REC991", label: "Recipient REC-991", sublabel: "Funnel Target", type: "RECIPIENT", x: 570, y: 210, totalTxn: 14, connected: 2, flagged: 5, avg: "₹89,000", note: "Concentration funnel beneficiary receiving all structured funds." },
+            { id: "OFFSHORE", label: "Offshore Acc K4", sublabel: "Wire Hub", type: "ACCOUNT", x: 800, y: 210, totalTxn: 6, connected: 1, flagged: 3, avg: "₹1,80,000", note: "Downstream recipient connected via immediate foreign link." }
+          ],
+          edges: [
+            { from: "A770", to: "TXN3401", label: "STRUCTURED", flagged: true },
+            { from: "A770", to: "TXN3398", label: "STRUCTURED", flagged: false, supporting: true },
+            { from: "TXN3401", to: "REC991", label: "SENT_TO", flagged: true },
+            { from: "TXN3398", to: "REC991", label: "SENT_TO", flagged: false },
+            { from: "REC991", to: "OFFSHORE", label: "OFFSHORE_WIRE", flagged: false }
+          ]
+        },
+        supportingTxns: [
+          { id: "TXN3401", time: "11:20", amount: "₹95,000", type: "NEFT", recipient: "REC-991", status: "Suspicious", isFlagged: true },
+          { id: "TXN3398", time: "05:14", amount: "₹92,000", type: "NEFT", recipient: "REC-991", status: "Supporting", isSupporting: true },
+          { id: "TXN3380", time: "Yesterday", amount: "₹88,000", type: "NEFT", recipient: "REC-991", status: "Supporting", isSupporting: true },
+          { id: "TXN3371", time: "Yesterday", amount: "₹70,000", type: "NEFT", recipient: "REC-991", status: "Normal", isNormal: true }
+        ],
+        timeline: [
+          { time: "2 Days Ago", amount: "₹14,000", state: "Normal", desc: "General vendor payment" },
+          { time: "Yesterday 09:30", amount: "₹70,000", state: "Normal", desc: "Initial transfer to REC-991" },
+          { time: "Yesterday 18:45", amount: "₹88,000", state: "Suspicious", desc: "Second structured transfer" },
+          { time: "Today 05:14", amount: "₹92,000", state: "Suspicious", desc: "Third structured transfer" },
+          { time: "Today 11:20", amount: "₹95,000", state: "Flagged", desc: "Fourth structured transfer flagged" }
+        ],
+        aiBrief: "Transaction TXN3401 has been flagged with an 89.5% risk probability due to severe recipient concentration. Account A770 has funneled ₹3,45,000 across 5 transactions within 48 hours exclusively to counterparty REC-991. The amounts (₹95,000, ₹92,000, ₹88,000) show consistent structuring behavior positioned just below typical ₹1,00,000 audit thresholds, with TigerGraph tracking downstream wire linkage to Offshore Account K4.",
+        templateBrief: "RULE-ENGINE NOTICE: Counterparty concentration threshold exceeded. Beneficiary REC-991 received >85% of 48h outflows. Structuring flag active (<₹1L barrier)."
+      },
+      {
+        id: "SCENARIO_4",
+        name: "Unusual Account Activity",
+        shortDesc: "Detect behavior significantly different from account’s historical pattern.",
+        targetTxnId: "TXN4890",
+        ml: {
+          prediction: "SUSPICIOUS",
+          riskScore: 92.4,
+          modelName: "Fraud Detection LightGBM (v3.4)",
+          confidence: "95.2%"
+        },
+        calculatedEvidence: [
+          {
+            code: "UNUSUAL_ACTIVITY",
+            title: "Anomalous Operational Profile",
+            desc: "Transaction characteristics deviate from the account profile by over 4 standard deviations.",
+            metrics: [
+              { label: "Historical Profile", value: "Retail / Micro" },
+              { label: "Z-Score", value: "+4.18 σ" }
+            ],
+            severity: "critical"
+          },
+          {
+            code: "OFF_HOURS_EXECUTION",
+            title: "Dormant Hours Access",
+            desc: "Executed at 03:14 AM outside normal active business hours (09:00 - 19:00).",
+            metrics: [
+              { label: "Execution Time", value: "03:14 AM" },
+              { label: "Historical Window", value: "09:00 - 19:00" }
+            ],
+            severity: "warning"
+          },
+          {
+            code: "NEW_DEVICE_IP",
+            title: "Unrecognized Device Fingerprint",
+            desc: "Originating session IP and ASN never previously associated with account credentials.",
+            metrics: [
+              { label: "IP Origin", value: "103.24.88.12 (Tor Relay)" },
+              { label: "Confidence", value: "Low Trust Device" }
+            ],
+            severity: "critical"
+          }
+        ],
+        graph: {
+          nodes: [
+            { id: "A319", label: "Account A319", sublabel: "Retail Profile", type: "ACCOUNT", x: 110, y: 210, totalTxn: 142, connected: 5, flagged: 1, avg: "₹6,500", note: "Historically low-risk retail account with strict daytime transaction records." },
+            { id: "TXN4890", label: "TXN4890", sublabel: "₹1,15,000 Anomaly", type: "FLAGGED_TXN", x: 340, y: 210, amount: "₹1,15,000", status: "SUSPICIOUS", note: "Sudden high-value off-hours transfer flagged by anomaly detector." },
+            { id: "DEV_SESSION", label: "Session #892", sublabel: "Tor Exit Relay", type: "SUPPORTING_TXN", x: 340, y: 90, amount: "N/A", status: "Supporting", note: "Anomalous session originating from unfamiliar geographic IP block." },
+            { id: "CRYPTO_DESK", label: "Crypto Escrow", sublabel: "P2P Settlement", type: "RECIPIENT", x: 570, y: 210, totalTxn: 52, connected: 14, flagged: 7, avg: "₹95,000", note: "Peer-to-peer crypto settlement gateway known for instant unfreezable conversion." },
+            { id: "UNVERIF_W", label: "Unverified Node", sublabel: "Ephemeral Desk", type: "ACCOUNT", x: 800, y: 210, totalTxn: 3, connected: 1, flagged: 2, avg: "₹1,15,000", note: "Ephemeral counterparty wallet." }
+          ],
+          edges: [
+            { from: "DEV_SESSION", to: "A319", label: "AUTH_TRIGGER", flagged: false, supporting: true },
+            { from: "A319", to: "TXN4890", label: "DISPATCHED", flagged: true },
+            { from: "TXN4890", to: "CRYPTO_DESK", label: "ROUTED_TO", flagged: true },
+            { from: "CRYPTO_DESK", to: "UNVERIF_W", label: "CONVERTED", flagged: false }
+          ]
+        },
+        supportingTxns: [
+          { id: "TXN4890", time: "03:14", amount: "₹1,15,000", type: "RTGS", recipient: "P2P Crypto Escrow", status: "Suspicious", isFlagged: true },
+          { id: "TXN4884", time: "Yesterday 16:45", amount: "₹4,200", type: "UPI", recipient: "Local Mart", status: "Normal", isNormal: true },
+          { id: "TXN4872", time: "Yesterday 12:10", amount: "₹1,850", type: "UPI", recipient: "Coffee Bar", status: "Normal", isNormal: true },
+          { id: "TXN4860", time: "2 Days Ago", amount: "₹8,500", type: "NEFT", recipient: "Utility Board", status: "Normal", isNormal: true }
+        ],
+        timeline: [
+          { time: "2 Days Ago 14:00", amount: "₹8,500", state: "Normal", desc: "Regular utility bill settlement" },
+          { time: "Yesterday 12:10", amount: "₹1,850", state: "Normal", desc: "Coffee and dining POS payment" },
+          { time: "Yesterday 16:45", amount: "₹4,200", state: "Normal", desc: "Local grocery merchant checkout" },
+          { time: "Today 03:12", amount: "₹0", state: "Unusual", desc: "New device login detected at 03:12 AM" },
+          { time: "Today 03:14", amount: "₹1,15,000", state: "Flagged", desc: "Instant RTGS off-hours transfer flagged" }
+        ],
+        aiBrief: "Transaction TXN4890 was marked as suspicious with a 92.4% risk score based on profound behavioral divergence. Account A319 operates with a median transaction size of ₹6,500 during business daylight hours (09:00–19:00). At 03:14 AM, an abrupt RTGS transfer of ₹1,15,000 (+4.18 σ deviation) was executed following a login from an unverified IP session, routing funds directly to P2P Crypto Escrow.",
+        templateBrief: "RULE-ENGINE NOTICE: Anomaly score: 4.18 sigma. Execution at 03:14 AM breaches baseline temporal bounds. Beneficiary category P2P Crypto Escrow matches high-risk taxonomy."
+      },
+      {
+        id: "SCENARIO_5",
+        name: "Connected Account Activity",
+        shortDesc: "Investigate suspicious relationships between accounts and transactions using TigerGraph.",
+        targetTxnId: "TXN5902",
+        ml: {
+          prediction: "SUSPICIOUS",
+          riskScore: 96.8,
+          modelName: "Graph-Neural Network + LightGBM",
+          confidence: "99.1%"
+        },
+        calculatedEvidence: [
+          {
+            code: "RING_TOPOLOGY",
+            title: "Circular / Layered Graph Topology",
+            desc: "TigerGraph traversal detected a multi-hop laundering loop returning to affiliated beneficial owner.",
+            metrics: [
+              { label: "Graph Diameter", value: "4 hops" },
+              { label: "Cycle Detected", value: "Yes (Loop 99)" }
+            ],
+            severity: "critical"
+          },
+          {
+            code: "SHARED_FINGERPRINT",
+            title: "Shared Identity Attributes",
+            desc: "Multiple ostensibly unrelated accounts share identical device identifiers and phone hashes.",
+            metrics: [
+              { label: "Shared Device ID", value: "DEV_ID_882a" },
+              { label: "Linked Accounts", value: "5 accounts" }
+            ],
+            severity: "critical"
+          },
+          {
+            code: "MULE_CHARACTERISTIC",
+            title: "Pass-Through Zero Balance",
+            desc: "Intermediary accounts maintain near-zero holding duration (<5 min retention).",
+            metrics: [
+              { label: "Median Retention", value: "3.4 minutes" },
+              { label: "Pass-Through Ratio", value: "98.7%" }
+            ],
+            severity: "critical"
+          },
+          {
+            code: "HIGH_RISK_SYNDICATE",
+            title: "Syndicate Blacklist Association",
+            desc: "Beneficiary node C707 has prior association with flagged AML investigation case.",
+            metrics: [
+              { label: "Entity ID", value: "C707" },
+              { label: "Prior Case Match", value: "CASE-2023-88B" }
+            ],
+            severity: "warning"
+          }
+        ],
+        graph: {
+          nodes: [
+            { id: "A901", label: "Account A901", sublabel: "Feeder Account", type: "ACCOUNT", x: 90, y: 210, totalTxn: 52, connected: 7, flagged: 4, avg: "₹38,000", note: "Primary feeder account injecting syndicate funds." },
+            { id: "TXN5902", label: "TXN5902", sublabel: "₹1,80,000 Dispersal", type: "FLAGGED_TXN", x: 290, y: 210, amount: "₹1,80,000", status: "SUSPICIOUS", note: "Initial splitting transaction entering multi-hop mule ring." },
+            { id: "MULE1", label: "Mule Hub M-12", sublabel: "Hop 1 Layer", type: "RECIPIENT", x: 490, y: 130, totalTxn: 94, connected: 12, flagged: 9, avg: "₹90,000", note: "First-tier pass-through account holding funds for under 4 minutes." },
+            { id: "MULE2", label: "Mule Hub M-15", sublabel: "Parallel Pass-thru", type: "RECIPIENT", x: 490, y: 290, totalTxn: 81, connected: 8, flagged: 7, avg: "₹88,000", note: "Secondary parallel pass-through branch." },
+            { id: "TXN5910", label: "TXN5910", sublabel: "₹89k Mule Out", type: "SUPPORTING_TXN", x: 670, y: 130, amount: "₹89,000", status: "Supporting", note: "Layering split branch transfer." },
+            { id: "C707", label: "Syndicate Hub C707", sublabel: "Consolidation Hub", type: "ACCOUNT", x: 820, y: 210, totalTxn: 118, connected: 16, flagged: 14, avg: "₹1,40,000", note: "Terminal aggregation account blacklisted in AML CASE-2023-88B." }
+          ],
+          edges: [
+            { from: "A901", to: "TXN5902", label: "ORIGINATED", flagged: true },
+            { from: "TXN5902", to: "MULE1", label: "SPLIT_TO", flagged: true },
+            { from: "TXN5902", to: "MULE2", label: "SPLIT_TO", flagged: true },
+            { from: "MULE1", to: "TXN5910", label: "PASSED_TO", flagged: false, supporting: true },
+            { from: "TXN5910", to: "C707", label: "ROUTED_TO", flagged: true },
+            { from: "MULE2", to: "C707", label: "CONVERGED_TO", flagged: true }
+          ]
+        },
+        supportingTxns: [
+          { id: "TXN5902", time: "17:15", amount: "₹1,80,000", type: "WIRE", recipient: "Mule Hub M-12", status: "Suspicious", isFlagged: true },
+          { id: "TXN5910", time: "17:19", amount: "₹89,000", type: "WIRE", recipient: "Syndicate Hub C707", status: "Supporting", isSupporting: true },
+          { id: "TXN5912", time: "17:21", amount: "₹91,000", type: "WIRE", recipient: "Syndicate Hub C707", status: "Supporting", isSupporting: true },
+          { id: "TXN5880", time: "16:40", amount: "₹1,80,000", type: "CREDIT", recipient: "A901 Inbound", status: "Normal", isNormal: true }
+        ],
+        timeline: [
+          { time: "16:40", amount: "₹1,80,000", state: "Normal", desc: "Large external funding received by A901" },
+          { time: "17:15", amount: "₹1,80,000", state: "Flagged", desc: "Dispatched to Mule Hub M-12 & M-15" },
+          { time: "17:19", amount: "₹89,000", state: "Suspicious", desc: "Mule M-12 routes split to C707" },
+          { time: "17:21", amount: "₹91,000", state: "Suspicious", desc: "Mule M-15 routes split to C707" },
+          { time: "17:24", amount: "₹1,80,000", state: "Suspicious", desc: "Consolidation complete at blacklisted C707" }
+        ],
+        aiBrief: "Transaction TXN5902 was classified as high-risk suspicious with a 96.8% risk score based on deep graph connectivity analyzed by TigerGraph. Outbound wire transfer of ₹1,80,000 from account A901 was systematically split across intermediary mule nodes M-12 and M-15 within 4 minutes. TigerGraph relationship traversal confirms that both split branches reconverge directly at Syndicate Hub C707, an entity previously implicated in AML CASE-2023-88B.",
+        templateBrief: "RULE-ENGINE NOTICE: High-risk syndicate cluster match. Graph path links A901 -> Mules -> C707 with zero-duration retention (<4m) and identical device fingerprint DEV_ID_882a."
+      }
+    ];
+
+    // State Variables
+    let currentScenario = SCENARIOS[0];
+    let showTemplateComparison = false;
+    let graphScale = 1;
+    let graphTranslate = { x: 0, y: 0 };
+    let selectedNodeId = null;
+
+    function initApp() {
+      renderScenarioCards();
+      loadScenario(SCENARIOS[0].id);
+    }
+
+    // Render Scenario Selector Cards (Without "Investigate →" text, keeping card clickable & showing risk badge)
+    function renderScenarioCards() {
+      const container = document.getElementById("scenarioCardsContainer");
+      container.innerHTML = SCENARIOS.map((sc, index) => {
+        const isActive = sc.id === currentScenario.id;
+        return `
+          <div 
+            onclick="loadScenario('${sc.id}')"
+            class="p-3 rounded-lg border transition-all cursor-pointer flex flex-col justify-between ${
+              isActive 
+                ? 'bg-sky-50/90 border-sky-500 shadow-md shadow-sky-100 ring-2 ring-sky-400/30' 
+                : 'bg-white/80 border-sky-100 hover:border-sky-300 hover:bg-sky-50/40 shadow-xs'
+            }"
+          >
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${isActive ? 'bg-sky-600 text-white font-bold' : 'bg-slate-100 text-slate-600'}">
+                  SCENARIO ${index + 1}
+                </span>
+                <span class="text-[10px] font-mono text-slate-400 font-medium">${sc.targetTxnId}</span>
+              </div>
+              <h4 class="text-xs font-bold text-slate-900 mt-1.5 leading-snug">${sc.name}</h4>
+              <p class="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">${sc.shortDesc}</p>
+            </div>
+            
+            <div class="mt-3 pt-2 border-t border-sky-100 flex items-center justify-between text-[10px]">
+              <span class="font-mono text-rose-600 font-bold">${sc.ml.riskScore}% Risk</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Load scenario into the workspace
+    function loadScenario(scenarioId) {
+      const sc = SCENARIOS.find(s => s.id === scenarioId) || SCENARIOS[0];
+      currentScenario = sc;
+      selectedNodeId = sc.graph.nodes[0].id;
+
+      // Update manual input box
+      document.getElementById("manualTxnInput").value = sc.targetTxnId;
+
+      // Section 2: Model Prediction
+      document.getElementById("mlPredictionTag").innerHTML = `
+        <span class="w-2 h-2 rounded-full bg-rose-500 pulse-indicator"></span>
+        ${sc.ml.prediction}
+      `;
+      document.getElementById("mlRiskScoreText").innerText = `${sc.ml.riskScore}%`;
+      document.getElementById("mlRiskBar").style.width = `${sc.ml.riskScore}%`;
+      document.getElementById("mlModelName").innerText = sc.ml.modelName;
+      document.getElementById("mlTargetTxn").innerText = sc.targetTxnId;
+      document.getElementById("mlConfidenceScore").innerText = `${sc.ml.confidence} (High)`;
+
+      // Section 3: Calculated Evidence
+      renderCalculatedEvidence(sc.calculatedEvidence);
+
+      // Section 4: TigerGraph Interactive Visualization
+      resetGraphZoom();
+      renderGraph(sc.graph);
+
+      // Section 5: Supporting Transactions
+      renderSupportingTransactions(sc.supportingTxns);
+
+      // Section 6: Account History Timeline
+      renderTimeline(sc.timeline);
+
+      // Section 7: AI Case Brief
+      document.getElementById("aiBriefText").innerText = sc.aiBrief;
+      document.getElementById("templateBriefText").innerText = sc.templateBrief;
+      document.getElementById("factTxn").innerText = sc.targetTxnId;
+      document.getElementById("factRisk").innerText = `Risk: ${sc.ml.riskScore}%`;
+
+      if (sc.calculatedEvidence[0] && sc.calculatedEvidence[0].metrics[0]) {
+        document.getElementById("factAmt").innerText = `${sc.calculatedEvidence[0].metrics[0].value}`;
+      }
+      if (sc.graph.nodes[2]) {
+        document.getElementById("factRec").innerText = `Recipient: ${sc.graph.nodes[2].label.replace('Recipient ', '')}`;
+      }
+
+      renderScenarioCards();
+      document.getElementById("actionToast").classList.add("hidden");
+    }
+
+    // Render Calculated Evidence
+    function renderCalculatedEvidence(evidenceList) {
+      const container = document.getElementById("calculatedEvidenceContainer");
+      container.innerHTML = evidenceList.map(ev => {
+        const isCritical = ev.severity === "critical";
+        const badgeColor = isCritical 
+          ? "bg-rose-50 text-rose-700 border-rose-200 font-bold" 
+          : "bg-amber-50 text-amber-700 border-amber-200 font-medium";
+        
+        return `
+          <div class="p-3 rounded-lg bg-white/90 border border-sky-100 flex flex-col justify-between hover:border-sky-300 transition-colors shadow-2xs">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded border ${badgeColor}">
+                  ${ev.code}
+                </span>
+                <span class="text-[10px] text-slate-400 font-mono">Calculated Metric</span>
+              </div>
+              <h4 class="text-xs font-semibold text-slate-800 mt-1.5">${ev.title}</h4>
+              <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">${ev.desc}</p>
+            </div>
+
+            <div class="mt-2.5 pt-2 border-t border-sky-100 grid grid-cols-2 gap-2 text-xs font-mono">
+              ${ev.metrics.map(m => `
+                <div class="bg-sky-50/50 p-1.5 rounded border border-sky-100">
+                  <span class="text-[9px] text-slate-500 block font-sans">${m.label}</span>
+                  <span class="text-xs font-bold text-slate-800">${m.value}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render TigerGraph Interactive SVG 
+    function renderGraph(graphData) {
+      const g = document.getElementById("graphElementsGroup");
+      if (!g) return;
+      g.innerHTML = "";
+
+      // 1. Draw connecting edges & animated arrows
+      graphData.edges.forEach(edge => {
+        const source = graphData.nodes.find(n => n.id === edge.from);
+        const target = graphData.nodes.find(n => n.id === edge.to);
+        if (!source || !target) return;
+
+        let strokeColor = "#0284c7";
+        let marker = "url(#arrow)";
+        let strokeWidth = "2";
+        let isDashed = false;
+
+        if (edge.flagged) {
+          strokeColor = "#e11d48";
+          marker = "url(#arrow-flagged)";
+          strokeWidth = "2.75";
+          isDashed = true;
+        } else if (edge.supporting) {
+          strokeColor = "#d97706";
+          marker = "url(#arrow-supporting)";
+          strokeWidth = "2.2";
+          isDashed = true;
+        }
+
+        const deltaY = target.y - source.y;
+        const curveOffset = Math.abs(deltaY) > 40 ? 0 : -22;
+        const midX = (source.x + target.x) / 2;
+        const midY = (source.y + target.y) / 2 + curveOffset;
+
+        // Path line
+        const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        pathEl.setAttribute("d", `M ${source.x} ${source.y} Q ${midX} ${midY} ${target.x} ${target.y}`);
+        pathEl.setAttribute("fill", "none");
+        pathEl.setAttribute("stroke", strokeColor);
+        pathEl.setAttribute("stroke-width", strokeWidth);
+        pathEl.setAttribute("marker-end", marker);
+        if (isDashed) {
+          pathEl.setAttribute("class", "graph-edge");
+        }
+        g.appendChild(pathEl);
+
+        // Edge label background badge
+        const textWidth = edge.label.length * 6.5 + 12;
+        const rectEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rectEl.setAttribute("x", midX - textWidth / 2);
+        rectEl.setAttribute("y", midY - 14);
+        rectEl.setAttribute("width", textWidth);
+        rectEl.setAttribute("height", "16");
+        rectEl.setAttribute("rx", "4");
+        rectEl.setAttribute("fill", "#ffffff");
+        rectEl.setAttribute("stroke", edge.flagged ? "#fecdd3" : (edge.supporting ? "#fde68a" : "#bae6fd"));
+        rectEl.setAttribute("stroke-width", "1");
+        g.appendChild(rectEl);
+
+        // Edge label text
+        const textEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        textEl.setAttribute("x", midX);
+        textEl.setAttribute("y", midY - 3);
+        textEl.setAttribute("fill", edge.flagged ? "#be123c" : (edge.supporting ? "#b45309" : "#0369a1"));
+        textEl.setAttribute("font-size", "9.5");
+        textEl.setAttribute("font-family", "JetBrains Mono, monospace");
+        textEl.setAttribute("text-anchor", "middle");
+        textEl.setAttribute("font-weight", "700");
+        textEl.textContent = edge.label;
+        g.appendChild(textEl);
+      });
+
+      // 2. Draw Nodes
+      graphData.nodes.forEach(node => {
+        const nodeGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        nodeGroup.setAttribute("class", `graph-node ${node.id === selectedNodeId ? 'selected-node' : ''}`);
+        nodeGroup.setAttribute("id", `graph-node-${node.id}`);
+        nodeGroup.setAttribute("onclick", `inspectNode('${node.id}')`);
+
+        let fill = "#ffffff";
+        let stroke = "#0284c7";
+        let textColor = "#0c4a6e";
+        let tagColor = "#0284c7";
+
+        if (node.type === "FLAGGED_TXN") {
+          stroke = "#e11d48";
+          fill = "#fff1f2";
+          textColor = "#881337";
+          tagColor = "#e11d48";
+        } else if (node.type === "SUPPORTING_TXN") {
+          stroke = "#d97706";
+          fill = "#fffbeb";
+          textColor = "#78350f";
+          tagColor = "#d97706";
+        } else if (node.type === "RECIPIENT") {
+          stroke = "#7c3aed";
+          fill = "#faf5ff";
+          textColor = "#4c1d95";
+          tagColor = "#7c3aed";
+        }
+
+        if (node.type === "FLAGGED_TXN" || node.type === "SUPPORTING_TXN") {
+          // Pill / Rounded Rect for Transactions
+          const pillWidth = 120;
+          const pillHeight = 44;
+          const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          rect.setAttribute("x", node.x - pillWidth / 2);
+          rect.setAttribute("y", node.y - pillHeight / 2);
+          rect.setAttribute("width", pillWidth);
+          rect.setAttribute("height", pillHeight);
+          rect.setAttribute("rx", "10");
+          rect.setAttribute("fill", fill);
+          rect.setAttribute("stroke", stroke);
+          rect.setAttribute("stroke-width", node.type === "FLAGGED_TXN" ? "2.5" : "2");
+          rect.setAttribute("filter", node.type === "FLAGGED_TXN" ? "url(#glow-red)" : "drop-shadow(0 3px 6px rgba(15, 23, 42, 0.08))");
+          nodeGroup.appendChild(rect);
+
+          // Top Accent bar
+          const accent = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          accent.setAttribute("x", node.x - pillWidth / 2 + 10);
+          accent.setAttribute("y", node.y - pillHeight / 2);
+          accent.setAttribute("width", pillWidth - 20);
+          accent.setAttribute("height", "3");
+          accent.setAttribute("rx", "1.5");
+          accent.setAttribute("fill", tagColor);
+          nodeGroup.appendChild(accent);
+
+          // Node ID
+          const title = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          title.setAttribute("x", node.x);
+          title.setAttribute("y", node.y - 3);
+          title.setAttribute("fill", textColor);
+          title.setAttribute("font-size", "11.5");
+          title.setAttribute("font-family", "JetBrains Mono, monospace");
+          title.setAttribute("font-weight", "700");
+          title.setAttribute("text-anchor", "middle");
+          title.textContent = node.id;
+          nodeGroup.appendChild(title);
+
+          // Sublabel / Amount
+          const sub = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          sub.setAttribute("x", node.x);
+          sub.setAttribute("y", node.y + 13);
+          sub.setAttribute("fill", node.type === "FLAGGED_TXN" ? "#be123c" : "#92400e");
+          sub.setAttribute("font-size", "9.5");
+          sub.setAttribute("font-family", "Inter, sans-serif");
+          sub.setAttribute("font-weight", "600");
+          sub.setAttribute("text-anchor", "middle");
+          sub.textContent = node.sublabel || node.amount || "";
+          nodeGroup.appendChild(sub);
+
+        } else {
+          // Circular Node for Accounts & Recipient Entities
+          const radius = 30;
+
+          // Outer ring
+          const ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          ring.setAttribute("cx", node.x);
+          ring.setAttribute("cy", node.y);
+          ring.setAttribute("r", radius + 3.5);
+          ring.setAttribute("fill", "none");
+          ring.setAttribute("stroke", stroke);
+          ring.setAttribute("stroke-opacity", "0.25");
+          ring.setAttribute("stroke-width", "2");
+          nodeGroup.appendChild(ring);
+
+          // Main body circle
+          const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          circle.setAttribute("cx", node.x);
+          circle.setAttribute("cy", node.y);
+          circle.setAttribute("r", radius);
+          circle.setAttribute("fill", fill);
+          circle.setAttribute("stroke", stroke);
+          circle.setAttribute("stroke-width", "2.5");
+          circle.setAttribute("filter", "drop-shadow(0 4px 8px rgba(2, 132, 199, 0.12))");
+          nodeGroup.appendChild(circle);
+
+          // Node ID
+          const title = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          title.setAttribute("x", node.x);
+          title.setAttribute("y", node.y + 4);
+          title.setAttribute("fill", textColor);
+          title.setAttribute("font-size", "11");
+          title.setAttribute("font-family", "JetBrains Mono, monospace");
+          title.setAttribute("font-weight", "700");
+          title.setAttribute("text-anchor", "middle");
+          title.textContent = node.id;
+          nodeGroup.appendChild(title);
+
+          // Outer sub-label beneath circle
+          const sub = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          sub.setAttribute("x", node.x);
+          sub.setAttribute("y", node.y + 46);
+          sub.setAttribute("fill", "#334155");
+          sub.setAttribute("font-size", "10");
+          sub.setAttribute("font-family", "Inter, sans-serif");
+          sub.setAttribute("font-weight", "600");
+          sub.setAttribute("text-anchor", "middle");
+          sub.textContent = node.label;
+          nodeGroup.appendChild(sub);
+
+          // Role tag
+          const subType = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          subType.setAttribute("x", node.x);
+          subType.setAttribute("y", node.y + 57);
+          subType.setAttribute("fill", "#64748b");
+          subType.setAttribute("font-size", "8.5");
+          subType.setAttribute("font-family", "JetBrains Mono, monospace");
+          subType.setAttribute("text-anchor", "middle");
+          subType.textContent = node.sublabel || node.type;
+          nodeGroup.appendChild(subType);
+        }
+
+        g.appendChild(nodeGroup);
+      });
+
+      // Select initial active node in inspector
+      inspectNode(selectedNodeId || graphData.nodes[0].id);
+    }
+
+    // Inspect individual node in TigerGraph Section
+    function inspectNode(nodeId) {
+      const sc = currentScenario;
+      const node = sc.graph.nodes.find(n => n.id === nodeId);
+      if (!node) return;
+
+      selectedNodeId = nodeId;
+      document.getElementById("activeNodeLabel").innerText = `${node.label} (${node.id})`;
+      document.getElementById("inspectorTitle").innerText = `${node.type.replace('_', ' ')}: ${node.id}`;
+      document.getElementById("inspectorType").innerText = node.type;
+      
+      const badge = document.getElementById("inspectorBadge");
+      if (node.type === "FLAGGED_TXN") {
+        badge.className = "w-3 h-3 rounded-full bg-rose-500 pulse-indicator shadow-sm";
+      } else if (node.type === "RECIPIENT") {
+        badge.className = "w-3 h-3 rounded-full bg-purple-500 shadow-sm";
+      } else if (node.type === "SUPPORTING_TXN") {
+        badge.className = "w-3 h-3 rounded-full bg-amber-500 shadow-sm";
+      } else {
+        badge.className = "w-3 h-3 rounded-full bg-sky-500 shadow-sm";
+      }
+
+      document.getElementById("inspTotalTxn").innerText = node.totalTxn || (node.amount ? "Single Execution" : "N/A");
+      document.getElementById("inspConnectedAcc").innerText = node.connected ? `${node.connected} entities` : "2 direct hops";
+      document.getElementById("inspFlaggedTxn").innerText = node.flagged !== undefined ? `${node.flagged} flagged cases` : (node.status || "Flagged Suspicious");
+      document.getElementById("inspAvgVal").innerText = node.avg || node.amount || "N/A";
+      document.getElementById("inspNote").innerText = node.note || "Verified entity record returned by TigerGraph relational traversal.";
+
+      // Update node visual highlight
+      const nodes = document.querySelectorAll(".graph-node");
+      nodes.forEach(el => el.classList.remove("selected-node"));
+      const activeEl = document.getElementById(`graph-node-${node.id}`);
+      if (activeEl) {
+        activeEl.classList.add("selected-node");
+      }
+    }
+
+    // Highlight links connected to active node
+    function highlightConnectedNeighbors() {
+      if (!selectedNodeId) return;
+      showActionToast(`Filtered TigerGraph 1-hop neighborhood for node: ${selectedNodeId}`);
+    }
+
+    // Graph Zoom & Pan Utilities
+    function zoomGraph(factor) {
+      graphScale *= factor;
+      if (graphScale < 0.6) graphScale = 0.6;
+      if (graphScale > 2.2) graphScale = 2.2;
+      updateGraphTransform();
+    }
+
+    function resetGraphZoom() {
+      graphScale = 1;
+      graphTranslate = { x: 0, y: 0 };
+      updateGraphTransform();
+    }
+
+    function updateGraphTransform() {
+      const g = document.getElementById("graphElementsGroup");
+      if (g) {
+        g.setAttribute("transform", `translate(${graphTranslate.x}, ${graphTranslate.y}) scale(${graphScale})`);
+      }
+    }
+
+    // Render Supporting Transactions Table
+    function renderSupportingTransactions(txns) {
+      const tbody = document.getElementById("supportingTxnsTableBody");
+      tbody.innerHTML = txns.map(t => {
+        let statusBadge = "bg-slate-100 text-slate-700 border-slate-200";
+        let rowBg = "hover:bg-sky-50/50";
+
+        if (t.isFlagged) {
+          statusBadge = "bg-rose-50 text-rose-700 border-rose-200 font-bold";
+          rowBg = "bg-rose-50/40 hover:bg-rose-50/70";
+        } else if (t.isSupporting) {
+          statusBadge = "bg-amber-50 text-amber-700 border-amber-200 font-semibold";
+          rowBg = "bg-amber-50/20 hover:bg-amber-50/50";
+        } else if (t.isNormal) {
+          statusBadge = "bg-emerald-50 text-emerald-700 border-emerald-200 font-medium";
+        }
+
+        return `
+          <tr class="${rowBg} transition-colors">
+            <td class="py-2.5 px-3 font-semibold text-sky-700">${t.id}</td>
+            <td class="py-2.5 px-3 text-slate-500">${t.time}</td>
+            <td class="py-2.5 px-3 text-slate-900 font-bold">${t.amount}</td>
+            <td class="py-2.5 px-3 text-slate-600 font-sans text-[11px]">${t.type}</td>
+            <td class="py-2.5 px-3 text-purple-700 font-medium">${t.recipient}</td>
+            <td class="py-2.5 px-3 text-right">
+              <span class="px-2 py-0.5 rounded text-[10px] border ${statusBadge}">
+                ${t.status}
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Render Account Timeline
+    function renderTimeline(timelineEvents) {
+      const container = document.getElementById("timelineContainer");
+      container.innerHTML = `
+        <div class="absolute left-2 top-2 bottom-2 w-0.5 bg-sky-200"></div>
+      `;
+
+      timelineEvents.forEach(item => {
+        let dotColor = "bg-emerald-500 ring-emerald-100";
+        let tagColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+
+        if (item.state === "Flagged") {
+          dotColor = "bg-rose-500 ring-rose-100 animate-pulse";
+          tagColor = "bg-rose-50 text-rose-700 border-rose-200 font-bold";
+        } else if (item.state === "Suspicious") {
+          dotColor = "bg-rose-400 ring-rose-100";
+          tagColor = "bg-rose-50 text-rose-700 border-rose-200";
+        } else if (item.state === "Unusual") {
+          dotColor = "bg-amber-500 ring-amber-100";
+          tagColor = "bg-amber-50 text-amber-700 border-amber-200";
+        }
+
+        const el = document.createElement("div");
+        el.className = "relative flex items-start gap-3 text-xs";
+        el.innerHTML = `
+          <div class="w-4 h-4 rounded-full ${dotColor} ring-4 border-2 border-white shrink-0 mt-0.5 z-10 shadow-2xs"></div>
+          <div class="flex-1 bg-white border border-sky-100 rounded-lg p-2 hover:border-sky-300 transition-colors shadow-2xs">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-slate-500 text-[11px]">${item.time}</span>
+              <span class="px-1.5 py-0.2 rounded text-[10px] border font-mono ${tagColor}">${item.state}</span>
+            </div>
+            <div class="flex items-center justify-between mt-1">
+              <span class="font-mono font-bold text-slate-900">${item.amount}</span>
+              <span class="text-[11px] text-slate-600 font-sans truncate pl-2">${item.desc}</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    // Toggle Section 7 Brief Mode: Grounded LLM vs Rule Template
+    function toggleBriefMode() {
+      showTemplateComparison = !showTemplateComparison;
+      const aiContainer = document.getElementById("aiBriefContainer");
+      const templateContainer = document.getElementById("templateBriefContainer");
+      const btn = document.getElementById("briefToggleBtn");
+
+      if (showTemplateComparison) {
+        aiContainer.className = "lg:col-span-6 p-4 rounded-lg bg-sky-50/50 border border-sky-200 flex flex-col gap-3";
+        templateContainer.classList.remove("hidden");
+        btn.classList.add("bg-sky-100", "border-sky-300", "text-sky-800");
+      } else {
+        aiContainer.className = "lg:col-span-12 p-4 rounded-lg bg-sky-50/50 border border-sky-200 flex flex-col gap-3";
+        templateContainer.classList.add("hidden");
+        btn.classList.remove("bg-sky-100", "border-sky-300", "text-sky-800");
+      }
+    }
+
+    // Manual Transaction ID Input Handler
+    function handleManualInvestigate() {
+      const inputVal = document.getElementById("manualTxnInput").value.trim().toUpperCase();
+      const matched = SCENARIOS.find(s => s.targetTxnId.toUpperCase() === inputVal);
+      if (matched) {
+        loadScenario(matched.id);
+        showActionToast(`Loaded prepared scenario for ${inputVal}`);
+      } else {
+        const custom = JSON.parse(JSON.stringify(SCENARIOS[0]));
+        custom.targetTxnId = inputVal || "TXN-CUSTOM";
+        custom.ml.targetTxn = custom.targetTxnId;
+        custom.graph.nodes[1].id = custom.targetTxnId;
+        custom.graph.nodes[1].label = custom.targetTxnId;
+        custom.graph.edges[0].to = custom.targetTxnId;
+        custom.graph.edges[1].from = custom.targetTxnId;
+        custom.supportingTxns[0].id = custom.targetTxnId;
+        custom.aiBrief = custom.aiBrief.replace(/TXN1045/g, custom.targetTxnId);
+        custom.templateBrief = custom.templateBrief.replace(/TXN1045/g, custom.targetTxnId);
+        
+        loadScenario(custom.id);
+        document.getElementById("manualTxnInput").value = custom.targetTxnId;
+        showActionToast(`Pipeline executed for arbitrary input ${custom.targetTxnId}`);
+      }
+    }
+
+    // Action Handlers
+    function recordFeedback(type) {
+      showActionToast(`Analyst feedback "${type}" committed to training buffer for model calibration.`);
+    }
+
+    function handleMarkReview() {
+      showActionToast(`Case ${currentScenario.targetTxnId} escalated and queued for Senior Compliance Review.`);
+    }
+
+    function handleExportCase() {
+      const exportPayload = {
+        investigation_id: `ARTHA-${currentScenario.targetTxnId}-${Date.now()}`,
+        transaction_id: currentScenario.targetTxnId,
+        ml_output: currentScenario.ml,
+        calculated_evidence: currentScenario.calculatedEvidence,
+        graph_entities: currentScenario.graph.nodes.length,
+        graph_relationships: currentScenario.graph.edges.length,
+        ai_case_brief: currentScenario.aiBrief,
+        export_timestamp: new Date().toISOString(),
+        audited_by: "Sr. Investigator (Tier-3)"
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `Arthadrishti_${currentScenario.targetTxnId}_Report.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+
+      showActionToast(`Forensic dossier exported for ${currentScenario.targetTxnId} (JSON format).`);
+    }
+
+    function handleClearCase() {
+      document.getElementById("manualTxnInput").value = "";
+      document.getElementById("aiBriefText").innerText = "Workspace cleared. Select a scenario or enter a Transaction ID to execute forensic telemetry.";
+      showActionToast("Current case cleared from active workspace buffer.");
+    }
+
+    function handleSimilarCases() {
+      showActionToast(`Found 3 historically similar cases across 18,000 embeddings: [CASE-7712 (98.2% match), CASE-9104 (94.1% match)]`);
+    }
+
+    function showActionToast(msg) {
+      const toast = document.getElementById("actionToast");
+      document.getElementById("actionToastText").innerText = msg;
+      toast.classList.remove("hidden");
+    }
+
+    document.getElementById("manualTxnInput").addEventListener("keyup", function(e) {
+      if (e.key === "Enter") {
+        handleManualInvestigate();
+      }
+    });
+
+    window.addEventListener("DOMContentLoaded", initApp);
+  </script>
+</body></html>
