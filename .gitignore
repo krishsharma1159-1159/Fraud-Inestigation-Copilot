@@ -1,9 +1,22 @@
+# Environment variables & secrets
+.env
+.env.*
+*.env
+!.env.example
+*.pem
+*.key
+*.cert
+*credential*
+*credentials*
+*api_key*
+*secret*
+*.secret
+credentials.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
 
 # Distribution / packaging
@@ -34,24 +47,17 @@ env.bak/
 venv.bak/
 .venv/
 
-# Environment variables & secrets
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-*.cert
-
-# TigerGraph credentials & secrets
-*.secret
-credentials.json
-
-# Large datasets & binary model artifacts
+# Large datasets & raw files
 data/
 *.parquet
 *.csv.gz
-*.pkl
-models/tuned/*.pkl
+test_identity.csv
+test_transaction.csv
+train_identity.csv
+train_transaction.csv
+sample_submission.csv
+data skillcred/
+graph_csv/
 
 # Audit and cache logs
 data/audit_log.json
